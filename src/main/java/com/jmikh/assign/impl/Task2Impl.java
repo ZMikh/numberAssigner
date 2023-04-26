@@ -45,47 +45,38 @@ public class Task2Impl implements IElementNumberAssigner {
             isNeedToAssign.put(elements.get(i), i);
         }
 
-        assignNumbers(isNeedToAssign, freeNumber, true);
+        assignNumbers(isNeedToAssign.entrySet(), freeNumber, true);
     }
 
-    private void assignNumbers(Map<IElement, Integer> isNeedToChange, int freeNumber, boolean onlyChangeable) {
+    private void assignNumbers(Set<Map.Entry<IElement, Integer>> isNeedToChange, int freeNumber, boolean onlyChangeable) {
         // Обновления больше не требуются
         if (isNeedToChange.isEmpty()) {
             return;
         }
         // Оставшиеся элементы невозможно изменить не использовав промежуточное значение
         if (!onlyChangeable) {
-            Set<Map.Entry<IElement, Integer>> entries = isNeedToChange.entrySet();
-            entries.stream()
+            isNeedToChange.stream()
                     .findFirst()
                     .get()
                     .getKey()
                     .setupNumber(freeNumber);
-
-            Map<IElement, Integer> remainedElements = entries.stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            assignNumbers(remainedElements, freeNumber, true);
+            assignNumbers(isNeedToChange, freeNumber, true);
             return;
         }
-
-        Set<Map.Entry<IElement, Integer>> entries = isNeedToChange.entrySet();
-        Set<Integer> keys = entries.stream()
+        boolean isChanged = false;
+        Set<Integer> keys = isNeedToChange.stream()
                 .map(it -> it.getKey().getNumber())
                 .collect(Collectors.toSet());
-
-        var iterator = entries.iterator();
+        var iterator = isNeedToChange.iterator();
         while (iterator.hasNext()) {
             Map.Entry<IElement, Integer> entry = iterator.next();
             Integer targetNum = entry.getValue();
             if (!keys.contains(targetNum)) {
                 entry.getKey().setupNumber(targetNum);
                 iterator.remove();
+                isChanged = true;
             }
         }
-
-        Map<IElement, Integer> remainedElements = entries.stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        assignNumbers(remainedElements, freeNumber, isNeedToChange.size() != remainedElements.size());
+        assignNumbers(isNeedToChange, freeNumber, isChanged);
     }
 }
